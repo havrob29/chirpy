@@ -3,14 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
-
-	endpoint "github.com/havrob29/chirpy/healthz"
 )
 
 func main() {
 	mux := http.NewServeMux()
-	mux.Handle("/app/*", http.FileServer(http.Dir(".")))
-	mux.Handle("/healthz", endpoint.EndpointHandler())
+	mux.Handle("/app/*", http.StripPrefix("/app", http.FileServer(http.Dir("."))))
+	mux.HandleFunc("/healthz", handlerReadiness)
 
 	corsMux := middlewareCors(mux)
 
@@ -34,4 +32,10 @@ func middlewareCors(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(200)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
