@@ -3,10 +3,15 @@ package main
 import (
 	"log"
 	"net/http"
+
+	endpoint "github.com/havrob29/chirpy/healthz"
 )
 
 func main() {
 	mux := http.NewServeMux()
+	mux.Handle("/app/*", http.FileServer(http.Dir(".")))
+	mux.Handle("/healthz", endpoint.EndpointHandler())
+
 	corsMux := middlewareCors(mux)
 
 	srv := &http.Server{
@@ -14,10 +19,8 @@ func main() {
 		Handler: corsMux,
 	}
 
-	log.Printf("Serving on %v\n", srv.Addr)
-
-	srv.ListenAndServe()
-
+	log.Printf("Serving files from on %v\n", srv.Addr)
+	log.Fatal(srv.ListenAndServe())
 }
 
 func middlewareCors(next http.Handler) http.Handler {
