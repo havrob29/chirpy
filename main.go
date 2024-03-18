@@ -17,9 +17,10 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/*", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("/metrics", apiCfg.writeNumberRequests)
-	mux.HandleFunc("/healthz", handlerReadiness)
-	mux.HandleFunc("/reset", apiCfg.resetNumberRequests)
+	mux.HandleFunc("/admin/metrics", apiCfg.adminMetrics)
+	mux.HandleFunc("/api/healthz", handlerReadiness)
+	mux.HandleFunc("/api/reset", apiCfg.resetNumberRequests)
+	mux.HandleFunc("/api/validate_chirp", validateChirp)
 
 	corsMux := middlewareCors(mux)
 
@@ -53,15 +54,23 @@ func (apiCfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.WriteHeader(405)
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(200)
 	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
 
-func (apiCfg *apiConfig) writeNumberRequests(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+func (apiCfg *apiConfig) adminMetrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.WriteHeader(405)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(200)
-	w.Write([]byte(fmt.Sprintf("Hits: %d", apiCfg.fileserverHits)))
+	w.Write([]byte(fmt.Sprintf("<html><body><h1>Welcome, Chirpy Admin</h1><p>Chirpy has been visited %d times!</p></body></html>", apiCfg.fileserverHits)))
 }
 
 func (apiCfg *apiConfig) resetNumberRequests(w http.ResponseWriter, r *http.Request) {
