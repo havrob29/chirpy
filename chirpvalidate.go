@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type returnError struct {
@@ -12,6 +13,17 @@ type returnError struct {
 
 type parameters struct {
 	Body string `json:"body"`
+}
+
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	dat, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("Error marshalling JSON. %s", err)
+		w.WriteHeader(500)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(dat)
 }
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
@@ -49,19 +61,30 @@ func validateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 		//else if chirp valid:
 	}
-	type returnValid struct {
-		Body bool `json:"valid"`
+
+	params.Body = cleanBadWords(params.Body)
+
+	type cleanedStruct struct {
+		Body string `json:"cleaned_body"`
 	}
-	respBody := returnValid{
-		Body: true,
+	respBody := cleanedStruct{
+		Body: params.Body,
 	}
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(500)
-		return
+	respondWithJSON(w, 200, respBody)
+}
+
+func cleanBadWords(input string) string {
+	badwords := map[string]string{
+		"kerfuffle": "bad",
+		"sharbert":  "bad",
+		"fornax":    "bad",
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	w.Write(dat)
+	words := strings.Split(input, " ")
+	for i, word := range words {
+
+		if badwords[word] == "bad" || badwords[strings.ToLower(word)] == "bad" {
+			words[i] = "****"
+		}
+	}
+	return strings.Join(words, " ")
 }

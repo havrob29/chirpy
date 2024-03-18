@@ -20,7 +20,7 @@ func main() {
 	mux.HandleFunc("/admin/metrics", apiCfg.adminMetrics)
 	mux.HandleFunc("/api/healthz", handlerReadiness)
 	mux.HandleFunc("/api/reset", apiCfg.resetNumberRequests)
-	mux.HandleFunc("/api/validate_chirp", validateChirp)
+	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
 
 	corsMux := middlewareCors(mux)
 
