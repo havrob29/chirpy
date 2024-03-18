@@ -7,11 +7,13 @@ import (
 
 type apiConfig struct {
 	fileserverHits int
+	chirpCount     int
 }
 
 func main() {
 	apiCfg := apiConfig{
 		fileserverHits: 0,
+		chirpCount:     1,
 	}
 
 	mux := http.NewServeMux()
@@ -19,7 +21,8 @@ func main() {
 	mux.HandleFunc("/admin/metrics", apiCfg.adminMetrics)
 	mux.HandleFunc("/api/healthz", handlerReadiness)
 	mux.HandleFunc("/api/reset", apiCfg.resetNumberRequests)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
+	mux.HandleFunc("POST /api/chirps", apiCfg.postChirp)
+	mux.HandleFunc("GET /api/chrips", getChirp)
 
 	corsMux := middlewareCors(mux)
 
