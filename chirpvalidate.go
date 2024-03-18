@@ -67,9 +67,7 @@ func validateChirp(w http.ResponseWriter, r *http.Request) {
 	type cleanedStruct struct {
 		Body string `json:"cleaned_body"`
 	}
-	respBody := cleanedStruct{
-		Body: params.Body,
-	}
+	respBody := cleanedStruct(params)
 	respondWithJSON(w, 200, respBody)
 }
 
