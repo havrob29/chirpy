@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -14,10 +15,16 @@ type apiConfig struct {
 func main() {
 	dbg := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
+	//if --debug is set, delete database.json
 	if *dbg {
-
+		fmt.Println("trying to delete old database...")
+		err := delDB()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
-	db, err := NewDB("database.json")
+
+	db, err := NewDB("data.json")
 	if err != nil {
 		log.Fatal(err)
 	}
