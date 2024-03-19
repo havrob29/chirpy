@@ -24,7 +24,7 @@ func main() {
 		}
 	}
 
-	db, err := NewDB("data.json")
+	db, err := NewDB("database.json")
 	if err != nil {
 		log.Fatal(err)
 	}
