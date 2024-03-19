@@ -2,48 +2,120 @@ package main
 
 import (
 	"encoding/json"
-	"log"
-	"net/http"
-
-	"github.com/havrob29/chirpy/internal/database"
+	"errors"
+	"os"
+	"sync"
 )
+
+type DBStructure struct {
+	Chirps map[int]Chirp `json:"chirps"`
+}
+
+type Chirp struct {
+	Body string `json:"body"`
+	ID   int    `json:"id"`
+}
+
+type DB struct {
+	path string
+	mux  *sync.RWMutex
+}
 
 type returnError struct {
 	Error string `json:"error"`
 }
 
-func getChirp(w http.ResponseWriter, r *http.Request) {
-
+// NewDB creates a new database connection
+// and creates the database file if it doesn't exist
+func NewDB(path string) (*DB, error) {
+	db := &DB{
+		path: path,
+		mux:  &sync.RWMutex{},
+	}
+	err := db.ensureDB()
+	return db, err
 }
 
-func (apiCfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
-
-	decoder := json.NewDecoder(r.Body)
-	chirp := database.Chirp{}
-	err := decoder.Decode(&chirp)
+// CreateChirp creates a new chirp and saves it to disk
+func (db *DB) CreateChirp(body string) (Chirp, error) {
+	dbStructure, err := db.loadDB()
 	if err != nil {
-		log.Printf("Error decoding parameters: %s", err)
-		w.WriteHeader(500)
-		return
+		return Chirp{}, err
+	}
+	id := len(dbStructure.Chirps) + 1
+	chirp := Chirp{
+		ID:   id,
+		Body: body,
+	}
+	dbStructure.Chirps[id] = chirp
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return Chirp{}, err
+	}
+	return chirp, nil
+}
+
+// GetChirps returns all chirps in the database
+func (db *DB) GetChirps() ([]Chirp, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return nil, err
+	}
+	chirps := make([]Chirp, 0, len(dbStructure.Chirps))
+	for _, chirp := range dbStructure.Chirps {
+		chirps = append(chirps, chirp)
+	}
+	return chirps, nil
+}
+
+// ensureDB creates a new database file if it doesn't exist
+func (db *DB) ensureDB() error {
+	_, err := os.ReadFile(db.path)
+	if errors.Is(err, os.ErrNotExist) {
+		return db.CreateDB()
+	}
+	return err
+}
+
+func (db *DB) CreateDB() error {
+	dbStructure := DBStructure{
+		Chirps: map[int]Chirp{},
+	}
+	return db.writeDB(dbStructure)
+}
+
+// loadDB reads the database file into memory
+func (db *DB) loadDB() (DBStructure, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+
+	dbStructure := DBStructure{}
+	dat, err := os.ReadFile(db.path)
+	if errors.Is(err, os.ErrNotExist) {
+		return dbStructure, err
+	}
+	err = json.Unmarshal(dat, &dbStructure)
+	if err != nil {
+		return dbStructure, err
 	}
 
-	if len(chirp.Body) >= 140 {
+	return dbStructure, nil
+}
 
-		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
-		return
+// writeDB writes the database file to disk
+func (db *DB) writeDB(dbStructure DBStructure) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	dat, err := json.Marshal(dbStructure)
+	if err != nil {
+		return err
 	}
 
-	chirp.Body = cleanBadWords(chirp.Body)
-
-	type structwithID struct {
-		ID   int    `json:"id"`
-		Body string `json:"body"`
+	err = os.WriteFile(db.path, dat, 0600)
+	if err != nil {
+		return err
 	}
-	respBody := structwithID{
-		ID:   apiCfg.chirpCount,
-		Body: chirp.Body,
-	}
-	respondWithJSON(w, 201, respBody)
-
-	apiCfg.chirpCount++
+	return nil
 }
