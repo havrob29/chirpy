@@ -7,8 +7,14 @@ import (
 	"sync"
 )
 
+type User struct {
+	Email string `json:"email"`
+	ID    int    `json:"id"`
+}
+
 type DBStructure struct {
 	Chirps map[int]Chirp `json:"chirps"`
+	Users  map[int]User  `json:"users"`
 }
 
 type Chirp struct {
@@ -56,6 +62,26 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	return chirp, nil
 }
 
+// CreateUser creates a new user and saves it to disk
+func (db *DB) CreateUser(email string) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+	id := len(dbStructure.Users) + 1
+	user := User{
+		ID:    id,
+		Email: email,
+	}
+	dbStructure.Users[id] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return User{}, err
+	}
+	return user, nil
+}
+
 // GetChirps returns all chirps in the database
 func (db *DB) GetChirps() ([]Chirp, error) {
 	dbStructure, err := db.loadDB()
@@ -67,6 +93,19 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 		chirps = append(chirps, chirp)
 	}
 	return chirps, nil
+}
+
+// GetUsers return all users in the database
+func (db *DB) GetUsers() ([]User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return nil, err
+	}
+	users := make([]User, 0, len(dbStructure.Users))
+	for _, user := range dbStructure.Users {
+		users = append(users, user)
+	}
+	return users, nil
 }
 
 // ensureDB creates a new database file if it doesn't exist
@@ -81,6 +120,7 @@ func (db *DB) ensureDB() error {
 func (db *DB) CreateDB() error {
 	dbStructure := DBStructure{
 		Chirps: map[int]Chirp{},
+		Users:  map[int]User{},
 	}
 	return db.writeDB(dbStructure)
 }

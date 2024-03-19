@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 )
@@ -11,7 +12,11 @@ type apiConfig struct {
 }
 
 func main() {
+	dbg := flag.Bool("debug", false, "Enable debug mode")
+	flag.Parse()
+	if *dbg {
 
+	}
 	db, err := NewDB("database.json")
 	if err != nil {
 		log.Fatal(err)
@@ -29,6 +34,7 @@ func main() {
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsRetrieve)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerSingleRetrieve)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerUserCreate)
 
 	corsMux := middlewareCors(mux)
 

@@ -22,7 +22,6 @@ func (apiCfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Re
 	sort.Slice(chirps, func(i, j int) bool {
 		return chirps[i].ID < chirps[j].ID
 	})
-
 	respondWithJSON(w, http.StatusOK, chirps)
 }
 
@@ -48,6 +47,5 @@ func (apiCfg *apiConfig) handlerSingleRetrieve(w http.ResponseWriter, r *http.Re
 		respondWithError(w, 404, "chirp not found")
 		return
 	}
-
 	respondWithJSON(w, http.StatusOK, chirp)
 }
