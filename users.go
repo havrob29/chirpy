@@ -42,8 +42,13 @@ func (apiCfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Reques
 
 func (apiCfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-	loginUser := User{}
-	err := decoder.Decode(&loginUser)
+	type RequestParams struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+		Expires  int    `json:"expires_in_seconds"`
+	}
+	requestParams := RequestParams{}
+	err := decoder.Decode(&requestParams)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldnt retrieve params")
 		return
@@ -57,7 +62,7 @@ func (apiCfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, user := range users {
-		if user.Email == loginUser.Email {
+		if user.Email == requestParams.Email {
 			compareUser = user
 		}
 	}
@@ -66,7 +71,7 @@ func (apiCfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requestPassword := loginUser.Password
+	requestPassword := requestParams.Password
 	savedPassword := compareUser.Password
 
 	err = comparePassword(requestPassword, savedPassword)

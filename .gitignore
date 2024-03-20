@@ -2,3 +2,4 @@ chirpy
 out
 database.json
 assets/
+key.env
