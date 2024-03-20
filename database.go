@@ -69,6 +69,13 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
+	//check if email is already registered to a user
+	for _, user := range dbStructure.Users {
+		if user.Email == email {
+			return User{}, errors.New("email already registered")
+		}
+	}
+
 	id := len(dbStructure.Users) + 1
 	//hashPasswordToSave
 	hashedPassword := hashPassword(password)

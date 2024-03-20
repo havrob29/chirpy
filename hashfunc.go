@@ -15,3 +15,7 @@ func hashPassword(password string) string {
 	fmt.Println(string(hash))
 	return string(hash)
 }
+
+func comparePassword(toCompare string, savedPass string) error {
+	return bcrypt.CompareHashAndPassword([]byte(savedPass), []byte(toCompare))
+}
