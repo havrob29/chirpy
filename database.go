@@ -8,8 +8,9 @@ import (
 )
 
 type User struct {
-	Email string `json:"email"`
-	ID    int    `json:"id"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+	ID       int    `json:"id"`
 }
 
 type DBStructure struct {
@@ -63,15 +64,19 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 }
 
 // CreateUser creates a new user and saves it to disk
-func (db *DB) CreateUser(email string) (User, error) {
+func (db *DB) CreateUser(email, password string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 	id := len(dbStructure.Users) + 1
+	//hashPasswordToSave
+	hashedPassword := hashPassword(password)
+
 	user := User{
-		ID:    id,
-		Email: email,
+		ID:       id,
+		Email:    email,
+		Password: hashedPassword,
 	}
 	dbStructure.Users[id] = user
 

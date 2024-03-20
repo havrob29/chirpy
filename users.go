@@ -7,35 +7,41 @@ import (
 )
 
 func (apiCfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		Email string `json:"email"`
-	}
 
 	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
+	user := User{}
+	err := decoder.Decode(&user)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldnt retrieve params")
 		return
 	}
 
-	validated, err := validateUser(params.Email)
+	user.Email, err = validateUser(user.Email)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	user, err := apiCfg.DB.CreateUser(validated)
+	user, err = apiCfg.DB.CreateUser(user.Email, user.Password)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create user")
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, User{
+	type ResponseWithoutPassword struct {
+		ID    int    `json:"id"`
+		Email string `json:"email"`
+	}
+
+	respondWithJSON(w, http.StatusCreated, ResponseWithoutPassword{
 		ID:    user.ID,
 		Email: user.Email,
 	})
 
+}
+
+func (apiCfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
+	return
 }
 
 func validateUser(email string) (string, error) {
