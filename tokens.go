@@ -73,12 +73,24 @@ func (apiCfg *apiConfig) postApiRefresh(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
+
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	newAccessToken, err := apiCfg.makeAccessToken(userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	type Response struct {
 		Token string `json:"token"`
 	}
 
 	response := Response{
-		Token: trimmedToken,
+		Token: newAccessToken,
 	}
 
 	respondWithJSON(w, http.StatusOK, response)
