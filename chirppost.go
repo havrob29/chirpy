@@ -4,17 +4,31 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func (apiCfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+	trimmedToken := strings.TrimPrefix(tokenString, "Bearer ")
+	claims := &jwt.RegisteredClaims{}
+	_, err := jwt.ParseWithClaims(trimmedToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(apiCfg.JWTSecret), nil
+	})
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	type parameters struct {
 		Body string `json:"body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldnt retrieve params")
 		return
@@ -25,17 +39,18 @@ func (apiCfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	chirp, err := apiCfg.DB.CreateChirp(cleaned)
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	chirp, err := apiCfg.DB.CreateChirp(cleaned, userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create chirp")
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, Chirp{
-		ID:   chirp.ID,
-		Body: chirp.Body,
-	})
+	respondWithJSON(w, http.StatusCreated, chirp)
 
 }
 
