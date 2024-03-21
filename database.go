@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 type User struct {
@@ -14,8 +16,9 @@ type User struct {
 }
 
 type DBStructure struct {
-	Chirps map[int]Chirp `json:"chirps"`
-	Users  map[int]User  `json:"users"`
+	Chirps  map[int]Chirp        `json:"chirps"`
+	Users   map[int]User         `json:"users"`
+	Revoked map[string]time.Time `json:"revoked"`
 }
 
 type Chirp struct {
@@ -41,6 +44,35 @@ func NewDB(path string) (*DB, error) {
 	}
 	err := db.ensureDB()
 	return db, err
+}
+
+// Revokes token by saving it to database along with the current time in UTC
+func (db *DB) CreateRevoked(token string) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	dbStructure.Revoked[token] = time.Now().UTC()
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetChirps returns all chirps in the database
+func (db *DB) GetRevoked() ([]string, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return nil, err
+	}
+	tokens := make([]string, 0, len(dbStructure.Revoked))
+	for token := range dbStructure.Revoked {
+		tokens = append(tokens, token)
+	}
+	return tokens, nil
 }
 
 // CreateChirp creates a new chirp and saves it to disk
@@ -155,8 +187,9 @@ func (db *DB) ensureDB() error {
 
 func (db *DB) CreateDB() error {
 	dbStructure := DBStructure{
-		Chirps: map[int]Chirp{},
-		Users:  map[int]User{},
+		Chirps:  map[int]Chirp{},
+		Users:   map[int]User{},
+		Revoked: map[string]time.Time{},
 	}
 	return db.writeDB(dbStructure)
 }
@@ -192,6 +225,22 @@ func (db *DB) writeDB(dbStructure DBStructure) error {
 	err = os.WriteFile(db.path, dat, 0600)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+// deletes database.json file
+func delDB() error {
+	_, err := os.ReadFile("database.json")
+	if err != nil {
+		return errors.New("no database to delete")
+	} else {
+		err = os.Remove("./database.json")
+		if err != nil {
+			return err
+		} else {
+			fmt.Println("delete successful...")
+		}
 	}
 	return nil
 }
