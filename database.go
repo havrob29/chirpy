@@ -94,6 +94,30 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 	return user, nil
 }
 
+// updates user's email and password in database
+func (db *DB) UpdateUser(id int, newEmail, newPassword string) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	//hashPasswordToSave
+	newHashedPassword := hashPassword(newPassword)
+
+	user := User{
+		ID:       id,
+		Email:    newEmail,
+		Password: newHashedPassword,
+	}
+	dbStructure.Users[id] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetChirps returns all chirps in the database
 func (db *DB) GetChirps() ([]Chirp, error) {
 	dbStructure, err := db.loadDB()
