@@ -25,7 +25,7 @@ func (apiCfg *apiConfig) postApiLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	//get user from database
+
 	for _, user := range users {
 		if user.Email == requestParams.Email {
 			compareUser = user

@@ -76,6 +76,24 @@ func (db *DB) GetRevoked() ([]string, error) {
 	return tokens, nil
 }
 
+// DeletesChrip from database
+func (db *DB) deleteChirp(chirpID, userID int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+	if dbStructure.Chirps[chirpID].Author != userID {
+		return errors.New("unauthorized: User is not the author of the chirp")
+	}
+	delete(dbStructure.Chirps, chirpID)
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // CreateChirp creates a new chirp and saves it to disk
 func (db *DB) CreateChirp(body string, userID int) (Chirp, error) {
 	dbStructure, err := db.loadDB()
