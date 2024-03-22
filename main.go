@@ -14,6 +14,7 @@ type apiConfig struct {
 	fileserverHits int
 	DB             *DB
 	JWTSecret      string
+	polka_key      string
 }
 
 func main() {
@@ -38,6 +39,7 @@ func main() {
 		fileserverHits: 0,
 		DB:             db,
 		JWTSecret:      os.Getenv("JWT_SECRET"),
+		polka_key:      os.Getenv("POLKA_KEY"),
 	}
 
 	mux := http.NewServeMux()
@@ -46,8 +48,8 @@ func main() {
 	mux.HandleFunc("/api/healthz", handlerReadiness)
 	mux.HandleFunc("/api/reset", apiCfg.resetNumberRequests)
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
-	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsRetrieve)
-	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerSingleRetrieve)
+	mux.HandleFunc("GET /api/chirps", apiCfg.getApiChirps)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getApiChirpsByID)
 	mux.HandleFunc("POST /api/users", apiCfg.postApiUsers)
 	mux.HandleFunc("POST /api/login", apiCfg.postApiLogin)
 	mux.HandleFunc("PUT /api/users", apiCfg.putApiUser)

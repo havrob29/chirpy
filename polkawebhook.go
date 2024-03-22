@@ -3,9 +3,17 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 func (apiCfg *apiConfig) postApiPolkaWebhook(w http.ResponseWriter, r *http.Request) {
+	authString := r.Header.Get("Authorization")
+	ApiKey := strings.TrimPrefix(authString, "ApiKey ")
+
+	if ApiKey != apiCfg.polka_key {
+		respondWithError(w, http.StatusUnauthorized, "apikey mismatch")
+		return
+	}
 
 	type RequestParams struct {
 		Event string `json:"event"`
