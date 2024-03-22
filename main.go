@@ -54,6 +54,7 @@ func main() {
 	mux.HandleFunc("POST /api/refresh", apiCfg.postApiRefresh)
 	mux.HandleFunc("POST /api/revoke", apiCfg.postApiRevoke)
 	mux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.deleteChirp)
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.postApiPolkaWebhook)
 
 	corsMux := middlewareCors(mux)
 

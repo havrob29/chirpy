@@ -10,6 +10,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type Chirp struct {
+	Body   string `json:"body"`
+	ID     int    `json:"id"`
+	Author int    `json:"author_id"`
+}
+
 func (apiCfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	tokenString := r.Header.Get("Authorization")
 	trimmedToken := strings.TrimPrefix(tokenString, "Bearer ")

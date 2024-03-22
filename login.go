@@ -58,16 +58,18 @@ func (apiCfg *apiConfig) postApiLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type Response struct {
-		ID           int    `json:"id"`
-		Email        string `json:"email"`
-		AccessToken  string `json:"token"`
-		RefreshToken string `json:"refresh_token"`
+		ID            int    `json:"id"`
+		Email         string `json:"email"`
+		AccessToken   string `json:"token"`
+		RefreshToken  string `json:"refresh_token"`
+		Is_chirpy_red bool   `json:"is_chirpy_red"`
 	}
 	response := Response{
-		ID:           compareUser.ID,
-		Email:        compareUser.Email,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		ID:            compareUser.ID,
+		Email:         compareUser.Email,
+		AccessToken:   accessToken,
+		RefreshToken:  refreshToken,
+		Is_chirpy_red: compareUser.Is_chirpy_red,
 	}
 
 	respondWithJSON(w, http.StatusOK, response)

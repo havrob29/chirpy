@@ -9,22 +9,10 @@ import (
 	"time"
 )
 
-type User struct {
-	Password string `json:"password"`
-	Email    string `json:"email"`
-	ID       int    `json:"id"`
-}
-
 type DBStructure struct {
 	Chirps  map[int]Chirp        `json:"chirps"`
 	Users   map[int]User         `json:"users"`
 	Revoked map[string]time.Time `json:"revoked"`
-}
-
-type Chirp struct {
-	Body   string `json:"body"`
-	ID     int    `json:"id"`
-	Author int    `json:"author_id"`
 }
 
 type DB struct {
@@ -133,9 +121,10 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 	hashedPassword := hashPassword(password)
 
 	user := User{
-		ID:       id,
-		Email:    email,
-		Password: hashedPassword,
+		ID:            id,
+		Email:         email,
+		Password:      hashedPassword,
+		Is_chirpy_red: false,
 	}
 	dbStructure.Users[id] = user
 
@@ -147,7 +136,7 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 }
 
 // updates user's email and password in database
-func (db *DB) UpdateUser(id int, newEmail, newPassword string) error {
+func (db *DB) UpdateUserEmailPassword(id int, newEmail, newPassword string) error {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return err
@@ -157,9 +146,32 @@ func (db *DB) UpdateUser(id int, newEmail, newPassword string) error {
 	newHashedPassword := hashPassword(newPassword)
 
 	user := User{
-		ID:       id,
-		Email:    newEmail,
-		Password: newHashedPassword,
+		ID:            id,
+		Email:         newEmail,
+		Password:      newHashedPassword,
+		Is_chirpy_red: dbStructure.Users[id].Is_chirpy_red,
+	}
+	dbStructure.Users[id] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// upgrade user Chirpy Red status
+func (db *DB) UpgradeUser(id int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user := User{
+		ID:            id,
+		Email:         dbStructure.Users[id].Email,
+		Password:      dbStructure.Users[id].Password,
+		Is_chirpy_red: true,
 	}
 	dbStructure.Users[id] = user
 
@@ -259,7 +271,7 @@ func delDB() error {
 		if err != nil {
 			return err
 		} else {
-			fmt.Println("delete successful...")
+			fmt.Println("delete successful")
 		}
 	}
 	return nil
