@@ -7,10 +7,15 @@ import (
 )
 
 func (apiCfg *apiConfig) getApiChirps(w http.ResponseWriter, r *http.Request) {
-	s := r.URL.Query().Get("author_id")
+	authorIDstring := r.URL.Query().Get("author_id")
+	sortByString := r.URL.Query().Get("sort")
 	optionalAuthorOnly := false
-	if s != "" {
+	optionalSortDesc := false
+	if authorIDstring != "" {
 		optionalAuthorOnly = true
+	}
+	if sortByString == "desc" {
+		optionalSortDesc = true
 	}
 
 	dbChirps, err := apiCfg.DB.GetChirps()
@@ -29,7 +34,7 @@ func (apiCfg *apiConfig) getApiChirps(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	} else {
-		authorID, err := strconv.Atoi(s)
+		authorID, err := strconv.Atoi(authorIDstring)
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "cant retrieve chrips")
 			return
@@ -44,10 +49,16 @@ func (apiCfg *apiConfig) getApiChirps(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	if optionalSortDesc {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID > chirps[j].ID
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID < chirps[j].ID
+		})
+	}
 
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
 	respondWithJSON(w, http.StatusOK, chirps)
 }
 
